@@ -1,0 +1,9 @@
+[package]
+name = "game_of_life_simple"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+terminal_size = "0.4.3"
+ctrlc = "3"
+rand = "0.10.0"
