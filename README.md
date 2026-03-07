@@ -1,0 +1,1 @@
+# Game Of Life in Terminal in Rust
