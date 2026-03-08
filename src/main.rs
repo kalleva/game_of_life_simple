@@ -102,8 +102,8 @@ fn draw(screen: &mut Screen) {
     let stdout = io::stdout();
     let lock = stdout.lock();
     let mut buffer = BufWriter::new(lock);
-    print!("\x1B[1;1H"); // Move cursor to top left corner 
-    print!("{}", screen);
+    let _ = write!(buffer, "\x1B[1;1H"); // Move cursor to top left corner 
+    let _ = write!(buffer, "{}", screen);
     let _ = buffer.flush();
 }
 
