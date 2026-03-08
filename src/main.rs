@@ -40,7 +40,7 @@ fn main() {
     }
 
     loop {
-        draw(&mut screen);
+        draw(&screen);
         update(&mut screen);
         thread::sleep(time::Duration::from_millis(GENERATION_TIMEOUT_MS))
     }
@@ -100,7 +100,7 @@ fn update(screen: &mut Screen) {
     std::mem::swap(&mut screen.current, &mut screen.next);
 }
 
-fn draw(screen: &mut Screen) {
+fn draw(screen: &Screen) {
     // To prevent writing line by line and force the whole buffer to be
     // written at the same time
     let stdout = io::stdout();
