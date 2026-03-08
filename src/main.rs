@@ -34,7 +34,7 @@ fn main() {
     // Randomly populate the screen with dead and alive cells
     for y in 0..screen.height {
         for x in 0..screen.width {
-            screen.current[y][x] = rand::random_bool(0.5);
+            screen.current[y * screen.width + x] = rand::random_bool(0.5);
         }
     }
 
@@ -61,36 +61,38 @@ fn update(screen: &mut Screen) {
             let y_minus_1 = (screen.height + y - 1) % screen.height;
             let x_plus_1 = (x + 1) % screen.width;
             let y_plus_1 = (y + 1) % screen.height;
+            
+            // Uses the idea that you can store 2d matrix in 1d array with (x, y) -> y * width + x
 
-            if grid[y_minus_1][x_minus_1] {
+            if grid[y_minus_1 * screen.width + x_minus_1] {
                 num_alive_neighbours += 1;
             }
-            if grid[y][x_minus_1] {
+            if grid[y * screen.width + x_minus_1] {
                 num_alive_neighbours += 1;
             }
-            if grid[y_plus_1][x_minus_1] {
+            if grid[y_plus_1 * screen.width + x_minus_1] {
                 num_alive_neighbours += 1;
             }
-            if grid[y_minus_1][x] {
+            if grid[y_minus_1 * screen.width + x] {
                 num_alive_neighbours += 1;
             }
-            if grid[y_plus_1][x] {
+            if grid[y_plus_1 * screen.width + x] {
                 num_alive_neighbours += 1;
             }
-            if grid[y_minus_1][x_plus_1] {
+            if grid[y_minus_1 * screen.width + x_plus_1] {
                 num_alive_neighbours += 1;
             }
-            if grid[y][x_plus_1] {
+            if grid[y * screen.width + x_plus_1] {
                 num_alive_neighbours += 1;
             }
-            if grid[y_plus_1][x_plus_1] {
+            if grid[y_plus_1 * screen.width + x_plus_1] {
                 num_alive_neighbours += 1;
             }
 
-            let old_cell = grid[y][x];
-            let new_cell = (old_cell && (num_alive_neighbours == 3 || num_alive_neighbours == 2))
-                || (!old_cell && num_alive_neighbours == 3);
-            screen.next[y][x] = new_cell;
+            let current_cell = grid[y * screen.width + x];
+            let next_cell = (current_cell && (num_alive_neighbours == 3 || num_alive_neighbours == 2))
+                || (!current_cell && num_alive_neighbours == 3);
+            screen.next[y * screen.width + x] = next_cell;
         }
     }
     std::mem::swap(&mut screen.current, &mut screen.next);
@@ -102,14 +104,14 @@ fn draw(screen: &mut Screen) {
     let stdout = io::stdout();
     let lock = stdout.lock();
     let mut buffer = BufWriter::new(lock);
-    let _ = write!(buffer, "\x1B[1;1H"); // Move cursor to top left corner 
+    let _ = write!(buffer, "\x1B[1;1H"); // Move cursor to top left corner
     let _ = write!(buffer, "{}", screen);
     let _ = buffer.flush();
 }
 
 struct Screen {
-    current: Vec<Vec<bool>>, // Matrix to store dead and alive cells
-    next: Vec<Vec<bool>>,    // Matrix to store dead and alive cells for the next generation
+    current: Vec<bool>, // Array to store matrix to store dead and alive cells
+    next: Vec<bool>, // Array to store matrix to store dead and alive cells for the next generation
     width: usize,
     height: usize,
 }
@@ -117,8 +119,8 @@ struct Screen {
 impl Screen {
     fn new(width: usize, height: usize) -> Self {
         Self {
-            current: vec![vec![false; width]; height],
-            next: vec![vec![false; width]; height],
+            current: vec![false; width * height],
+            next: vec![false; width * height],
             width,
             height,
         }
@@ -127,16 +129,15 @@ impl Screen {
 
 impl fmt::Display for Screen {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        for (i, row) in self.current.iter().enumerate() {
-            for cell in row {
-                if *cell {
+        for y in 0..self.height {
+            for x in 0..self.width {
+                if self.current[y * self.width + x] {
                     write!(f, "██")?;
                 } else {
                     write!(f, "  ")?;
                 }
             }
-
-            if i < self.current.len() - 1 {
+            if y < self.height - 1 {
                 writeln!(f)?;
             }
         }
