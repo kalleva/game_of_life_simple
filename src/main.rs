@@ -1,7 +1,8 @@
 // alive ██, dead 2 spaces
 
 use rand;
-use std::io::Write;
+use std::fmt;
+use std::io::{self, BufWriter, Write};
 use std::{thread, time};
 use terminal_size::{Height, Width, terminal_size};
 
@@ -60,7 +61,7 @@ fn update(screen: &mut Screen) {
     for y in 0..screen.height {
         for x in 0..screen.width {
             let mut num_alive_neighbours: i32 = 0;
-            let x_minus_1= (screen.width + x - 1 ) % screen.width;
+            let x_minus_1 = (screen.width + x - 1) % screen.width;
             let y_minus_1 = (screen.height + y - 1) % screen.height;
             let x_plus_1 = (x + 1) % screen.width;
             let y_plus_1 = (y + 1) % screen.height;
@@ -104,18 +105,22 @@ fn update(screen: &mut Screen) {
 }
 
 fn draw(screen: &mut Screen) {
+    // To prevent writing line by line and force the whole buffer to be
+    // written at the same time
+    let stdout = io::stdout();
+    let lock = stdout.lock();
+    let mut buffer = BufWriter::new(lock);
     print!("\x1B[1;1H"); // Move cursor to top left corner 
-    print!("{}", screen.render());
-    let _ = std::io::stdout().flush();
+    print!("{}", screen);
+    let _ = buffer.flush();
 }
 
 struct Screen {
     grid1: Vec<Vec<bool>>, // Matrix to store dead and alive cells
     grid2: Vec<Vec<bool>>, // Matrix to store dead and alive cells
     grid2_used: bool,
-    display: String, // String that will be output to the screen
-    width: usize,    // grid width
-    height: usize,   // grid height
+    width: usize,  // grid width
+    height: usize, // grid height
 }
 
 impl Screen {
@@ -124,30 +129,32 @@ impl Screen {
             grid1: vec![vec![false; width]; height],
             grid2: vec![vec![false; width]; height],
             grid2_used: false,
-            display: String::with_capacity((width * 2 + 1) * height), // Every row needs to fit (width * 2) + '\n'
             width,
             height,
         }
     }
+}
 
-    fn render(&mut self) -> &str {
-        self.display.clear();
+impl fmt::Display for Screen {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let grid = if self.grid2_used {
             &self.grid2
         } else {
             &self.grid1
         };
-        for row in grid {
+        for (i, row) in grid.iter().enumerate() {
             for cell in row {
                 if *cell {
-                    self.display.push_str("██");
+                    write!(f, "██")?;
                 } else {
-                    self.display.push_str("  ");
+                    write!(f, "  ")?;
                 }
             }
-            self.display.push('\n');
+
+            if i < grid.len() - 1 {
+                writeln!(f)?;
+            }
         }
-        self.display.pop();
-        &self.display
+        Ok(())
     }
 }
