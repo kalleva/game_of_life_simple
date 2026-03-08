@@ -12,15 +12,15 @@ fn main() {
     // Set up handler for Ctrl+C
     ctrlc::set_handler(|| {
         let mut stdout = std::io::stdout();
-        let _ = write!(stdout, "\x1B[?25h"); // Enable cursor
-        let _ = stdout.flush();
+        write!(stdout, "\x1B[?25h").unwrap(); // Enable cursor
+        stdout.flush().unwrap();
         std::process::exit(0);
     })
     .expect("Error setting Ctrl+C handler");
 
     // Hide cursor, clear the screen, move to the top left corner
     print!("\x1B[?25l\x1B[2J\x1B[1;1H");
-    let _ = std::io::stdout().flush();
+    std::io::stdout().flush().unwrap();
 
     // Get terminal window dimensions
     let (term_width, term_height) = if let Some((Width(w), Height(h))) = terminal_size() {
@@ -106,9 +106,9 @@ fn draw(screen: &Screen) {
     let stdout = io::stdout();
     let lock = stdout.lock();
     let mut buffer = BufWriter::new(lock);
-    let _ = write!(buffer, "\x1B[1;1H"); // Move cursor to top left corner
-    let _ = write!(buffer, "{}", screen);
-    let _ = buffer.flush();
+    write!(buffer, "\x1B[1;1H").unwrap(); // Move cursor to top left corner
+    write!(buffer, "{}", screen).unwrap();
+    buffer.flush().unwrap();
 }
 
 struct Screen {
