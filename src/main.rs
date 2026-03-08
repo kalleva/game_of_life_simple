@@ -18,8 +18,9 @@ fn main() {
     })
     .expect("Error setting Ctrl+C handler");
 
-    // Hide cursor
-    print!("\x1B[?25l");
+    // Hide cursor, clear the screen, move to the top left corner
+    print!("\x1B[?25l\x1B[2J\x1B[1;1H");
+    let _ = std::io::stdout().flush();
 
     // Get terminal window dimensions
     let (term_width, term_height) = if let Some((Width(w), Height(h))) = terminal_size() {
@@ -61,7 +62,7 @@ fn update(screen: &mut Screen) {
             let y_minus_1 = (screen.height + y - 1) % screen.height;
             let x_plus_1 = (x + 1) % screen.width;
             let y_plus_1 = (y + 1) % screen.height;
-            
+
             // Uses the idea that you can store 2d matrix in 1d array with (x, y) -> y * width + x
 
             if grid[y_minus_1 * screen.width + x_minus_1] {
@@ -90,7 +91,8 @@ fn update(screen: &mut Screen) {
             }
 
             let current_cell = grid[y * screen.width + x];
-            let next_cell = (current_cell && (num_alive_neighbours == 3 || num_alive_neighbours == 2))
+            let next_cell = (current_cell
+                && (num_alive_neighbours == 3 || num_alive_neighbours == 2))
                 || (!current_cell && num_alive_neighbours == 3);
             screen.next[y * screen.width + x] = next_cell;
         }
