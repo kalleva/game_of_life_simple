@@ -29,12 +29,12 @@ fn main() {
         (80, 24)
     };
 
-    let mut screen: Screen = Screen::new(term_width / 2, term_height);
+    let mut screen: Screen = Screen::new(term_width / 2, term_height); // /2 because 2 chars are used to draw dead or alive cell
 
     // Randomly populate the screen with dead and alive cells
     for y in 0..screen.height {
         for x in 0..screen.width {
-            screen.grid1[y][x] = rand::random_bool(0.5);
+            screen.current[y][x] = rand::random_bool(0.5);
         }
     }
 
@@ -52,11 +52,7 @@ fn update(screen: &mut Screen) {
     // 3. Any live cell with more than three live neighbours dies, as if by overpopulation.
     // 4. Any dead cell with exactly three live neighbours becomes a live cell, as if by reproduction.
 
-    let (old_grid, new_grid) = if screen.grid2_used {
-        (&screen.grid2, &mut screen.grid1)
-    } else {
-        (&screen.grid1, &mut screen.grid2)
-    };
+    let grid = &screen.current;
 
     for y in 0..screen.height {
         for x in 0..screen.width {
@@ -66,42 +62,42 @@ fn update(screen: &mut Screen) {
             let x_plus_1 = (x + 1) % screen.width;
             let y_plus_1 = (y + 1) % screen.height;
 
-            if old_grid[y_minus_1][x_minus_1] {
+            if grid[y_minus_1][x_minus_1] {
                 num_alive_neighbours += 1;
             }
-            if old_grid[y][x_minus_1] {
+            if grid[y][x_minus_1] {
                 num_alive_neighbours += 1;
             }
-            if old_grid[y_plus_1][x_minus_1] {
+            if grid[y_plus_1][x_minus_1] {
                 num_alive_neighbours += 1;
             }
-            if old_grid[y_minus_1][x] {
+            if grid[y_minus_1][x] {
                 num_alive_neighbours += 1;
             }
-            if old_grid[y_plus_1][x] {
+            if grid[y_plus_1][x] {
                 num_alive_neighbours += 1;
             }
-            if old_grid[y_minus_1][x_plus_1] {
+            if grid[y_minus_1][x_plus_1] {
                 num_alive_neighbours += 1;
             }
-            if old_grid[y][x_plus_1] {
+            if grid[y][x_plus_1] {
                 num_alive_neighbours += 1;
             }
-            if old_grid[y_plus_1][x_plus_1] {
+            if grid[y_plus_1][x_plus_1] {
                 num_alive_neighbours += 1;
             }
 
-            let old_cell = old_grid[y][x];
+            let old_cell = grid[y][x];
             let mut new_cell = false;
             if (old_cell && (num_alive_neighbours == 3 || num_alive_neighbours == 2))
                 || (!old_cell && num_alive_neighbours == 3)
             {
                 new_cell = true;
             }
-            new_grid[y][x] = new_cell;
+            screen.next[y][x] = new_cell;
         }
     }
-    screen.grid2_used = !screen.grid2_used;
+    std::mem::swap(&mut screen.current, &mut screen.next);
 }
 
 fn draw(screen: &mut Screen) {
@@ -116,19 +112,17 @@ fn draw(screen: &mut Screen) {
 }
 
 struct Screen {
-    grid1: Vec<Vec<bool>>, // Matrix to store dead and alive cells
-    grid2: Vec<Vec<bool>>, // Matrix to store dead and alive cells
-    grid2_used: bool,
-    width: usize,  // grid width
-    height: usize, // grid height
+    current: Vec<Vec<bool>>, // Matrix to store dead and alive cells
+    next: Vec<Vec<bool>>, // Matrix to store dead and alive cells for the next generation
+    width: usize,
+    height: usize,
 }
 
 impl Screen {
     fn new(width: usize, height: usize) -> Self {
         Self {
-            grid1: vec![vec![false; width]; height],
-            grid2: vec![vec![false; width]; height],
-            grid2_used: false,
+            current: vec![vec![false; width]; height],
+            next: vec![vec![false; width]; height],
             width,
             height,
         }
@@ -137,12 +131,7 @@ impl Screen {
 
 impl fmt::Display for Screen {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let grid = if self.grid2_used {
-            &self.grid2
-        } else {
-            &self.grid1
-        };
-        for (i, row) in grid.iter().enumerate() {
+        for (i, row) in self.current.iter().enumerate() {
             for cell in row {
                 if *cell {
                     write!(f, "██")?;
@@ -151,7 +140,7 @@ impl fmt::Display for Screen {
                 }
             }
 
-            if i < grid.len() - 1 {
+            if i < self.current.len() - 1 {
                 writeln!(f)?;
             }
         }
