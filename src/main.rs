@@ -88,12 +88,8 @@ fn update(screen: &mut Screen) {
             }
 
             let old_cell = grid[y][x];
-            let mut new_cell = false;
-            if (old_cell && (num_alive_neighbours == 3 || num_alive_neighbours == 2))
-                || (!old_cell && num_alive_neighbours == 3)
-            {
-                new_cell = true;
-            }
+            let new_cell = (old_cell && (num_alive_neighbours == 3 || num_alive_neighbours == 2))
+                || (!old_cell && num_alive_neighbours == 3);
             screen.next[y][x] = new_cell;
         }
     }
@@ -113,7 +109,7 @@ fn draw(screen: &mut Screen) {
 
 struct Screen {
     current: Vec<Vec<bool>>, // Matrix to store dead and alive cells
-    next: Vec<Vec<bool>>, // Matrix to store dead and alive cells for the next generation
+    next: Vec<Vec<bool>>,    // Matrix to store dead and alive cells for the next generation
     width: usize,
     height: usize,
 }
